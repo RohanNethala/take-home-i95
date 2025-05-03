@@ -1,0 +1,35 @@
+.recommendations-container {
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin-bottom: 20px;
+    background-color: #e6ffe6; 
+  }
+  
+  .recommendations-container h2 {
+    margin-top: 0;
+    color: #333;
+  }
+  
+  .recommendation-list {
+    list-style: none;
+    padding: 0;
+    text-align: left;
+  }
+  
+  .recommendation-item {
+    background-color: #f0fff0;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #c1e1c1;
+    border-radius: 4px;
+  }
+  
+  .recommendation-item strong {
+    color: #2e8b57; 
+  }
+  
+  .error-message {
+      color: #dc3545; 
+      font-weight: bold;
+  }
+  
