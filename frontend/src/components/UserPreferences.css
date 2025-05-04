@@ -1,64 +1,72 @@
-.preferences-container {
-    border: 1px solid #ccc;
+.user-preferences {
     padding: 15px;
-    margin-bottom: 20px;
-    background-color: #f0f8ff; 
-  }
-  
-  .preferences-container h2 {
-    margin-top: 0;
-    color: #333;
-  }
-  
-  .form-group {
+    border-bottom: 1px solid #eee;
     margin-bottom: 15px;
-    text-align: left;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #555;
-  }
-  
-  .form-group input[type="text"],
-  .form-group input[type="number"] {
-    width: calc(100% - 22px); 
+}
+
+.user-preferences h2 {
+    margin-top: 0;
+    font-size: 1.2em;
+    color: #333;
+}
+
+.user-preferences form fieldset {
+    border: 1px solid #ddd;
     padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.user-preferences form legend {
+    font-weight: bold;
+    padding: 0 5px;
+    color: #555;
+}
+
+.user-preferences form div {
+    margin-bottom: 8px;
+}
+
+.user-preferences form label {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.user-preferences form input[type="checkbox"] {
+    cursor: pointer;
+}
+
+.user-preferences form select {
+    width: 100%;
+    padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    font-size: 1em;
-  }
-  
-  .form-group.price-range {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .form-group.price-range label {
-    flex-basis: 100px; 
-    margin-bottom: 0;
-  }
-  
-  .form-group.price-range input {
-    flex-grow: 1;
-    width: auto;
-  }
-  
-  .preferences-container button {
-    padding: 10px 20px;
+    box-sizing: border-box; /* Include padding and border in element's total width and height */
+}
+
+.user-preferences form textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-height: 60px;
+    box-sizing: border-box;
+    resize: vertical; /* Allow vertical resizing */
+}
+
+.user-preferences form button {
     background-color: #007bff;
     color: white;
+    padding: 10px 15px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 1em;
-    transition: background-color 0.2s ease-in-out;
-  }
-  
-  .preferences-container button:hover {
+    transition: background-color 0.2s ease;
+    width: 100%; /* Make button full width */
+}
+
+.user-preferences form button:hover {
     background-color: #0056b3;
-  }
-  
+}
+
