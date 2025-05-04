@@ -3,8 +3,8 @@ import os
 
 # Determine the absolute path to the data directory
 # Assuming this script is in /backend/services/, the backend dir is one level up
-script_dir = os.path.dirname(__file__) 
-backend_dir = os.path.dirname(script_dir) 
+script_dir = os.path.dirname(__file__) # /home/ubuntu/recommendation-takehome/backend/services
+backend_dir = os.path.dirname(script_dir) # /home/ubuntu/recommendation-takehome/backend
 data_path = os.path.join(backend_dir, 'data', 'products.json')
 
 products = []
@@ -45,6 +45,7 @@ def get_product_by_id(product_id):
     if not products:
         load_products()
     for product in products:
+        # Use .get() for safer dictionary access
         if product.get('id') == product_id:
             return product
     return None

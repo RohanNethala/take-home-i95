@@ -1,6 +1,6 @@
 // Service to handle API calls to the backend
 
-const API_BASE_URL = "http://localhost:5001/api"; // Use exposed backend URL
+const API_BASE_URL = "http://localhost:5001/api";
 
 /**
  * Fetches the product catalog from the backend.

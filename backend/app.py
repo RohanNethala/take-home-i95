@@ -1,97 +1,71 @@
-from fastapi import FastAPI, HTTPException, Body
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import List, Dict, Any
+from flask import Flask, request, jsonify, abort
+from flask_cors import CORS
 import os
-import uvicorn
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+# Assuming app.py is in the backend root
+dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(dotenv_path=dotenv_path)
 
 # Adjust import paths based on the project structure
 # Assuming app.py is in the backend root
 from services.product_service import get_all_products, load_products, get_product_by_id
 from services.llm_service import get_recommendations
 
-# --- Pydantic Models for Request/Response --- 
+# --- Flask Application Setup --- 
 
-class RecommendationRequest(BaseModel):
-    preferences: Dict[str, Any] = Field(..., example={"categories": ["Electronics", "Clothing"], "price_range": [50, 200], "styles": ["casual"]})
-    history_ids: List[str] = Field(..., example=["product001", "product015"])
-
-class RecommendationItem(BaseModel):
-    product_id: str
-    explanation: str
-
-class RecommendationResponse(BaseModel):
-    recommendations: List[RecommendationItem]
-
-class ErrorResponse(BaseModel):
-    error: str
-
-# --- FastAPI Application Setup --- 
-
-app = FastAPI(
-    title="Product Recommendation API",
-    description="API for generating product recommendations using an LLM.",
-    version="1.0.0"
-)
+app = Flask(__name__)
 
 # Configure CORS
-origins = [
-    "http://localhost:3000",  # Allow frontend origin during development
-    "http://127.0.0.1:3000",
-    # Add deployed frontend URL here if applicable
-]
+# Allow requests from the default React development server origin
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins, # Allows specific origins
-    # allow_origins=["*"], # Allows all origins (less secure)
-    allow_credentials=True,
-    allow_methods=["*"], # Allows all methods (GET, POST, etc.)
-    allow_headers=["*"], # Allows all headers
-)
-
-# --- Event Handlers --- 
-
-@app.on_event("startup")
-def startup_event():
-    print("Initializing product data...")
-    load_products() # Load products when the application starts
-    print("Product data initialization complete.")
+# --- Load Product Data on Startup --- 
+# Flask doesn't have a direct equivalent to FastAPI's startup events built-in
+# for simple cases like this. We can load data when the service module is imported,
+# or explicitly call load_products() here. The product_service already loads on import.
+print("Initializing product data (via module import)...")
+if not get_all_products(): # Trigger loading if it hasn't happened
+    print("Product data was not loaded on import, attempting explicit load...")
+    load_products()
+    if get_all_products():
+        print("Product data initialization complete.")
+    else:
+        print("Error: Failed to load product data on startup.")
+else:
+    print("Product data already loaded.")
 
 # --- API Endpoints --- 
 
-@app.get("/", tags=["General"], summary="Root endpoint to check API status")
+@app.route("/", methods=["GET"])
 def read_root():
     """Simple endpoint to confirm the API is running."""
-    return {"message": "Welcome to the Recommendation System API!"}
+    return jsonify({"message": "Welcome to the Recommendation System API (Flask Version)!"})
 
-@app.get("/api/products", tags=["Products"], summary="Get the full product catalog")
+# /api/products endpoint
+@app.route("/api/products", methods=["GET"])
 def get_products_endpoint():
     """Retrieves the list of all available products."""
     products = get_all_products()
     if not products:
-        # This should ideally not happen if startup loading works
-        raise HTTPException(status_code=503, detail="Product catalog is currently unavailable.")
-    return products
+        # If loading failed or file was empty
+        abort(503, description="Product catalog is currently unavailable.")
+    return jsonify(products)
 
-@app.post(
-    "/api/recommendations", 
-    response_model=RecommendationResponse, 
-    responses={ # Define potential error responses
-        400: {"model": ErrorResponse, "description": "Invalid request body"},
-        429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
-        500: {"model": ErrorResponse, "description": "Internal server error"},
-        502: {"model": ErrorResponse, "description": "LLM response error"},
-        503: {"model": ErrorResponse, "description": "Service unavailable (e.g., API key issue)"}
-    },
-    tags=["Recommendations"],
-    summary="Generate personalized product recommendations"
-)
-def recommend_products_endpoint(request_body: RecommendationRequest = Body(...)):
+# /api/recommendations endpoint
+@app.route("/api/recommendations", methods=["POST"])
+def recommend_products_endpoint():
     """Receives user preferences and browsing history, then returns LLM-generated product recommendations."""
-    
-    preferences = request_body.preferences
-    history_ids = request_body.history_ids
+    if not request.is_json:
+        abort(400, description="Request body must be JSON.")
+
+    data = request.get_json()
+    preferences = data.get("preferences")
+    history_ids = data.get("history_ids")
+
+    if preferences is None or history_ids is None:
+        abort(400, description="Missing 'preferences' or 'history_ids' in request body.")
 
     # Call the LLM service
     result = get_recommendations(preferences, history_ids)
@@ -105,31 +79,30 @@ def recommend_products_endpoint(request_body: RecommendationRequest = Body(...))
             status_code = 429 # Too Many Requests
         elif "format error" in error_message or "parsing error" in error_message:
              status_code = 502 # Bad Gateway (LLM response issue)
-        elif "catalog is empty" in error_message:
-             status_code = 503 # Service Unavailable (data loading issue)
+        elif "catalog is empty" in error_message or "No products found" in error_message:
+             status_code = 503 # Service Unavailable (data loading/filtering issue)
              
-        raise HTTPException(status_code=status_code, detail=error_message)
+        abort(status_code, description=error_message)
     
     # Validate that the recommended product IDs actually exist
     valid_recommendations = []
-    for rec in result.get("recommendations", []):
-        if get_product_by_id(rec.get("product_id")):
+    llm_recs = result.get("recommendations", [])
+    for rec in llm_recs:
+        if isinstance(rec, dict) and get_product_by_id(rec.get("product_id")):
             valid_recommendations.append(rec)
         else:
-            # Log this, but maybe don't fail the whole request? Or maybe do?
-            # For now, we just filter out invalid recommendations silently.
-            print(f"Warning: LLM recommended non-existent product ID {rec.get('product_id')}, filtering out.")
+            # Log this, but filter out invalid recommendations silently.
+            print(f"Warning: LLM recommended invalid/non-existent product ID or format: {rec.get('product_id', rec)}, filtering out.")
             
-    if not valid_recommendations and result.get("recommendations") is not None:
+    if not valid_recommendations and llm_recs:
         # If LLM gave recommendations but none were valid product IDs
-        raise HTTPException(status_code=502, detail="LLM generated recommendations, but none matched existing products.")
+        abort(502, description="LLM generated recommendations, but none matched existing products.")
 
-    return {"recommendations": valid_recommendations}
+    return jsonify({"recommendations": valid_recommendations})
 
 # --- Main Execution --- 
 
 if __name__ == "__main__":
-    # Use uvicorn to run the app. Run this script using: uvicorn app:app --reload --host 0.0.0.0 --port 5001
     port = int(os.environ.get("PORT", 5001)) # Default to 5001 for backend
-    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True) # reload=True for development
+    app.run(host="0.0.0.0", port=port, debug=True) # debug=True enables auto-reloading
 

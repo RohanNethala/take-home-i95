@@ -1,18 +1,18 @@
-# Backend Setup (FastAPI)
+# Backend Setup (Flask)
 
-This directory contains the backend API for the AI-Powered Product Recommendation Engine, built using FastAPI.
+This directory contains the backend API for the AI-Powered Product Recommendation Engine, built using Flask.
 
 ## Prerequisites
 
 *   Python 3.10 or later
 *   `pip` (Python package installer)
-*   `python3-venv` (for creating virtual environments - install via `sudo apt install python3.10-venv` on Debian/Ubuntu)
+*   `python3-venv` (for creating virtual environments - e.g., `sudo apt install python3.10-venv` on Debian/Ubuntu)
 
 ## Setup Instructions
 
 1.  **Navigate to the `backend` directory:**
     ```bash
-    cd path/to/recommendation-takehome/backend
+    cd path/to/recommendation_code/backend
     ```
 
 2.  **Create a Python virtual environment:**
@@ -38,32 +38,36 @@ This directory contains the backend API for the AI-Powered Product Recommendatio
 
 5.  **Configure API Key:**
     *   Create a file named `.env` in the `backend` directory.
-    *   Add your OpenAI API key to this file:
+    *   Add your Groq API key to this file:
         ```env
-        OPENAI_API_KEY=your_openai_api_key_here
+        GROQ_API_KEY=your_groq_api_key_here
+        # Optional: Specify model, max tokens, temperature
+        # MODEL_NAME=llama3-8b-8192
+        # MAX_TOKENS=500
+        # TEMPERATURE=0.5
         ```
     *   **Important:** Ensure the `.env` file is listed in your `.gitignore` file (if you are using Git) to avoid committing your secret key.
 
-6.  **Run the FastAPI application:**
+6.  **Run the Flask application (Development):**
     ```bash
-    uvicorn app:app --reload --host 0.0.0.0 --port 5001
+    python3 app.py
     ```
-    *   `uvicorn app:app`: Tells uvicorn to run the `app` instance found in the `app.py` file.
-    *   `--reload`: Enables auto-reloading for development (the server restarts when code changes).
+    *   This command runs the Flask development server.
     *   `--host 0.0.0.0`: Makes the server accessible from outside the container/machine (necessary for the frontend to connect).
     *   `--port 5001`: Specifies the port the backend server will run on.
+    *   `debug=True`: Enables auto-reloading for development (the server restarts when code changes) and provides a debugger.
+    *   **Note:** For production, use a production-ready WSGI server like Gunicorn or Waitress instead of the built-in development server.
 
 7.  **Access the API:**
     *   The API will be running at `http://localhost:5001` (or `http://<your-ip>:5001`).
-    *   You can access the interactive API documentation (Swagger UI) at `http://localhost:5001/docs`.
-    *   You can access the alternative API documentation (ReDoc) at `http://localhost:5001/redoc`.
+    *   Unlike FastAPI, Flask does not provide automatic interactive API documentation out-of-the-box. Refer to the endpoint descriptions below or the source code (`app.py`) for details.
 
 ## Project Structure
 
 ```
 backend/
 │
-├── app.py               # Main FastAPI application, defines endpoints
+├── app.py               # Main Flask application, defines routes
 ├── requirements.txt     # Python dependencies
 ├── .env.example         # Example environment file (API keys, etc.)
 ├── .env                 # Actual environment file (created by user, contains API keys - DO NOT COMMIT)
@@ -81,9 +85,12 @@ backend/
 ## API Endpoints
 
 *   `GET /`: Root endpoint to check if the API is running.
+    *   **Response:** `{"message": "Welcome to the Recommendation System API (Flask Version)!"}`
 *   `GET /api/products`: Retrieves the full product catalog.
+    *   **Success Response (200 OK):** JSON array of product objects.
+    *   **Error Response (503 Service Unavailable):** If product catalog cannot be loaded.
 *   `POST /api/recommendations`: Accepts user preferences and browsing history (as JSON body) and returns personalized product recommendations.
-    *   **Request Body:**
+    *   **Request Body (Content-Type: application/json):**
         ```json
         {
           "preferences": {
@@ -100,19 +107,18 @@ backend/
         {
           "recommendations": [
             {
-              "product_id": "product008",
-              "explanation": "Based on your interest in Electronics and smart home devices, this Smart Thermostat could be a great addition."
+              "product_id": "prod...",
+              "explanation": "Explanation why this product is recommended..."
             },
-            {
-              "product_id": "product021",
-              "explanation": "Since you viewed other electronics like the Smart Speaker (product012), you might also like these Noise-Cancelling Headphones."
-            },
-            {
-              "product_id": "product003",
-              "explanation": "This Modern Desk Lamp fits your preferred style and falls within your desired price range."
-            }
+            ...
           ]
         }
         ```
-    *   **Error Responses:** Uses standard HTTP status codes (400, 429, 500, 502, 503) with a JSON body like `{"detail": "Error message"}`.
+    *   **Error Responses:** Uses standard HTTP status codes with a JSON body like `{"error": "Error description"}` generated via Flask's `abort(code, description=...)`.
+        *   `400 Bad Request`: If request body is not JSON or missing required fields (`preferences`, `history_ids`).
+        *   `429 Too Many Requests`: If Groq API rate limit is exceeded.
+        *   `500 Internal Server Error`: For unexpected server errors.
+        *   `502 Bad Gateway`: If the LLM response has format/parsing errors or recommends non-existent products.
+        *   `503 Service Unavailable`: If the Groq API key is missing/invalid, or if the product catalog is empty/unavailable after filtering.
+
 

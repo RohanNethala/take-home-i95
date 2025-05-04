@@ -6,8 +6,8 @@ from .product_service import get_all_products, get_product_by_id
 from typing import Dict, Any, List
 
 # Load environment variables from .env file
-script_dir = os.path.dirname(__file__) 
-backend_dir = os.path.dirname(script_dir) 
+script_dir = os.path.dirname(__file__) # /backend/services
+backend_dir = os.path.dirname(script_dir) # /backend
 dotenv_path = os.path.join(backend_dir, ".env")
 load_dotenv(dotenv_path=dotenv_path)
 
@@ -98,7 +98,7 @@ def get_recommendations(preferences: Dict[str, Any], history_ids: List[str]) -> 
 
         # Format browsing history
         history_products = [get_product_by_id(pid) for pid in history_ids if get_product_by_id(pid)]
-        history_str = "User has recently viewed:\n" + "\n".join([f"- {p.get("name")} (ID: {p.get("id")})" for p in history_products]) if history_products else "User has no browsing history yet."
+        history_str = "User has recently viewed:\n" + "\n".join([f"- {p.get('name')} (ID: {p.get('id')})" for p in history_products]) if history_products else "User has no browsing history yet."
 
         # Format preferences (ensure all fields are included)
         preferences_str = "User Preferences:\n" + json.dumps(preferences, indent=2)
@@ -125,6 +125,10 @@ def get_recommendations(preferences: Dict[str, Any], history_ids: List[str]) -> 
             f"Based *strictly* on category/price preferences, *strongly considering* styles/tags/interests, and considering browsing history, provide up to 3 product recommendations with explanations in the specified JSON format."
         )
         
+        # print("--- Sending Prompt to Groq LLM ---")
+        # print(f"System Prompt: {system_prompt}")
+        # print(f"User Prompt Length: {len(user_prompt)}")
+
         chat_completion = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[
@@ -136,9 +140,12 @@ def get_recommendations(preferences: Dict[str, Any], history_ids: List[str]) -> 
             response_format={"type": "json_object"}
         )
 
+        # print("--- Received Response from Groq LLM ---")
+        # print(chat_completion)
+
         content = chat_completion.choices[0].message.content
         
-        # Attempt to parse the JSON response
+        # Attempt to parse the JSON response (simplified due to response_format="json_object")
         try:
             recommendation_data = json.loads(content)
             if isinstance(recommendation_data, dict) and \
