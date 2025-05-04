@@ -6,8 +6,8 @@ from .product_service import get_all_products, get_product_by_id
 from typing import Dict, Any, List
 
 # Load environment variables from .env file
-script_dir = os.path.dirname(__file__) # /backend/services
-backend_dir = os.path.dirname(script_dir) # /backend
+script_dir = os.path.dirname(__file__)
+backend_dir = os.path.dirname(script_dir) 
 dotenv_path = os.path.join(backend_dir, ".env")
 load_dotenv(dotenv_path=dotenv_path)
 
@@ -124,10 +124,6 @@ def get_recommendations(preferences: Dict[str, Any], history_ids: List[str]) -> 
             f"Available Product Catalog (Use ONLY these products, already filtered by category/price):\n---\n{product_catalog_str}\n\n---"
             f"Based *strictly* on category/price preferences, *strongly considering* styles/tags/interests, and considering browsing history, provide up to 3 product recommendations with explanations in the specified JSON format."
         )
-        
-        # print("--- Sending Prompt to Groq LLM ---")
-        # print(f"System Prompt: {system_prompt}")
-        # print(f"User Prompt Length: {len(user_prompt)}")
 
         chat_completion = client.chat.completions.create(
             model=MODEL_NAME,
@@ -139,9 +135,6 @@ def get_recommendations(preferences: Dict[str, Any], history_ids: List[str]) -> 
             max_tokens=MAX_TOKENS,
             response_format={"type": "json_object"}
         )
-
-        # print("--- Received Response from Groq LLM ---")
-        # print(chat_completion)
 
         content = chat_completion.choices[0].message.content
         

@@ -2,9 +2,8 @@ import json
 import os
 
 # Determine the absolute path to the data directory
-# Assuming this script is in /backend/services/, the backend dir is one level up
-script_dir = os.path.dirname(__file__) # /home/ubuntu/recommendation-takehome/backend/services
-backend_dir = os.path.dirname(script_dir) # /home/ubuntu/recommendation-takehome/backend
+script_dir = os.path.dirname(__file__) 
+backend_dir = os.path.dirname(script_dir) 
 data_path = os.path.join(backend_dir, 'data', 'products.json')
 
 products = []
