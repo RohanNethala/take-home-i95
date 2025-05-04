@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Catalog from './components/Catalog';
-import UserPreferences from './components/UserPreferences';
-import BrowsingHistory from './components/BrowsingHistory';
-import Recommendations from './components/Recommendations';
+import Catalog from './components/Catalog/Catalog';
+import UserPreferences from './components/UserPreferences/UserPreferences';
+import BrowsingHistory from './components/BrowsingHistory/BrowsingHistory';
+import Recommendations from './components/Recommendations/Recommendations';
 import { fetchProducts, fetchRecommendations } from './services/api';
 import './styles/App.css'; // Main CSS file
 

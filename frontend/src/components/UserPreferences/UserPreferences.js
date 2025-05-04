@@ -49,8 +49,6 @@ const UserPreferences = ({ onSubmitPreferences }) => {
             other_interests: otherInterests.trim() || undefined // Only include if not empty
         };
         onSubmitPreferences(preferences);
-        // Optionally clear form or give feedback
-        // console.log("Preferences submitted:", preferences);
     };
 
     return (
