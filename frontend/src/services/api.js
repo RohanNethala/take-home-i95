@@ -42,7 +42,7 @@ export const fetchRecommendations = async (preferences, historyIds) => {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ preferences, history_ids: historyIds }), // Match FastAPI request body model
+            body: JSON.stringify({ preferences, history_ids: historyIds }), 
         });
 
         if (!response.ok) {
